@@ -1,8 +1,8 @@
 # ComputerVisionProject
 Application for recognizing and classifying Sockets Type
 
-All of our code is written in Python. The only libraries we used are cv2, numpy and math.
-For the user interface we used tkinter.
+All of the code is written in Python. The only libraries used are cv2, numpy and math.
+User interface written using tkinter.
 
 The main steps:
 1. resize the image.
