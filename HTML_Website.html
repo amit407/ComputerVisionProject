@@ -1,0 +1,160 @@
+<!--=======================================================================================================-->
+<!--=                         Start of page content                                                       =-->
+<!--=======================================================================================================-->
+
+<h2 align="center"> <em> Socket's Type Recognizer </em> </h2>
+<p align="center"> Final project by </p>
+<p align="center"> <b> Tomer Tal & Amit Shraga </b> </p>
+<p align="center"> <a href="mailto:" class="course"> taltom@post.bgu.ac.il</a>, 
+    <a href="mailto:" class="course">amitshra@post.bgu.ac.il  </a> </p>
+
+<hr>
+
+<h3 align="left"> Introduction </h3>
+<p align="justify">
+    Isn't it weird that there are 15 different types of plug-socket in the world?<br> 
+    In israel we use type H, in Italy and Chile they use type L.<br>
+    Some countries suffer from multiple sockets types. for example, the maldives uses <b>6</b> types of sockets.<br>
+    This problem is not going to be solved anytime soon. the IEC (International Elctrotechnical commission) created a universal socket - type N.<br>
+    The intention was that the whole world would adapt the new socket, and all the countries would have the same socket's type.<br>  
+    but to change the whole Electrical infrastructure of a country costs billions of dollars, so the world did not cooperate.<br><br>
+    Since the problem of the multiple plugs is too deeply rooted, we decided to develop an application that recognizes sockets types.<br><br> 
+    Our main goal was to develop an application that receives an image of a plug, analyzes the objects(number and shape of the holes on the plug)<br>
+    and returns the type of the plug according to the properties detected on the plug.<br>
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjTuyPpQog_uz6WFqyJ7HilLYwoN_aocGrFQ&usqp=CAU" alt="not found" style="width:300px;height:200px"><br>    
+</p>
+
+<h3 align="left"> Approach and Method</h3>
+<p align="justify">
+    In the main window of the application, the user can upload an image of a socket.<br>
+    After uploading the image and pressing on "UPLOAD IMAGE", the application will activate the python program with the image.<br>
+    All of our code is written in Python. The only libraries we used are cv2, numpy and math.<br>
+    For the user interface we used tkinter.<br><br>
+    The main steps: <br>
+    1. resize the image. <br>
+    2. recognize the object (the socket) and blank the wall behind.<br>
+    3. find a threshold that marks the holes of the socket and erases noises on the sockets (such as shading etc).<br>
+    4. for each hole detected, crop the hole from the original image.<br>
+    5. for each cropped hole classify whether it is a circle or a rectangle.<br>
+    6. given the set of circles and rectangles of one socket, find the relations between the holes and classify the type of the socket.<br><br>
+    Now we will discuss on the main steps: <br><br>
+    <u>Step 1 - Resize the image:</u><br>
+    In order to normalize values such as radius, distances etc. between different images we resized all the images to be the same size.<br><br>
+    <u>Step 2 - Recognize the object(the socket):</u><br>
+    Create a binary image using "cv2.threshold()" to find the bright areas in the image.<br>
+    Find the biggest polygon in the binary image.<br>
+    Check the angles of the biggest polygon found to see if its angles not too sharp(less than 52 degree), if it is, lower the threshold, and try to find a polygon again.<br>
+    It was needed to check the angles because we have encountered cases where the detected polygon passed between crucial parts of the socket. <br>
+    So to not miss any information we had to try and find another polygon. <br><br>   
+
+    <img src="https://imgtr.ee/images/2023/03/16/qw1m0.jpg" alt="not found" style="width:300px;height:200px">
+    <img src="https://imgtr.ee/images/2023/03/16/qwwyL.png" alt="not found" style="width:300px;height:200px"><br>
+    <img src="https://imgtr.ee/images/2023/03/16/qwvi3.png" alt="not found" style="width:300px;height:200px"><br><br>
+    <u>Step 3 - Find a threshold:</u><br>
+    We used the function "cv2.threshold()" to convert our grayscale image to a binary image. <br>
+    We wanted to separate the black holes of the socket from the rest of the image. <br>
+    So we had to find the right threshold that would mark only the holes as white spots, <br>
+    and would refer to all the other image as a black background. <br>
+    The threshold needed to be very accurate, not too big so it will not include shadows and unwanted black marks as holes, <br> 
+    and not too small so the black holes of the socket will still be painted in white. <br>
+    Also, different images needed different thresholds. so the threshold is individual per image. <br> 
+    For these reasons we used a while loop that decreases the threshold in each loop until we get a list of 2 or 3 contours - the number of holes of a sockets. <br>
+    To find the contours We used the function "cv2.findContours()" that returns a list of contours in the image. <br><br>
+    <img src="https://imgtr.ee/images/2023/03/18/qde8m.jpg" alt="not found" style="width:300px;height:200px">
+    <img src="https://imgtr.ee/images/2023/03/16/qwpom.png" alt="not found" style="width:300px;height:200px"><br>
+    <img src="https://imgtr.ee/images/2023/03/16/qwDDU.png" alt="not found" style="width:300px;height:200px"><br><br>
+    <u>Step 4 - Crop the hole:</u><br>
+    We got to a conclusion that to best classify each hole(as a circle or a rectangle), we had to look at it as the main object of the image.<br>
+    Therefore, we used "cv2.approxPolyDP()" to get a polygon of each contour so we could crop the original image according to the x and y coordinates of each polygon.<br>
+    We cropped the holes from the original image (and not from the binary image from previous step 3) <br>
+    because we wanted the original and most accurate shape of the holes without the "cv2.threshold()" function damaging and affecting them. <br>
+    After cropping the holes to one image per hole, we threshold each image with a more allowing threshold so that we get an accurate shape for each hole.<br><br>
+    <u>Step 5 - Classify - circle or rectangle:</u><br>
+    For each image of a single hole we used "cv2.approxPolyDP()" function that returns a polygon of the contour in the image.<br>
+    The length of the polygon(number of points in the polygon) helped us determine <br>
+    Whether it is a polygon of circle (the polygon has more than 8 points) or it is a rectangle (polygon has 2 to 5 points). <br><br>
+    <u>Step 6 - Find relations between the holes:</u><br>
+    After we found the shape for each hole, we now have the whole set of shapes of holes in a socket.<br>
+    Some of the types of sockets are easy to detect because their set of shapes is unique. an example is socket type A.<br>
+    Type A has 2 rectangles and 0 circles. and is the only type that has these set of shapes. <br>
+    But some of the sets of shapes are not unique. <br>
+    For an example, the set that consists of 3 circles appears in 4 different socket types.<br>
+    So in order to classify these kind of cases we had to figure out the relations between the circles.<br>
+    We created functions that calculate the radius of the circles, the relative locations of the circles, and function that calculates the angles<br>
+    formed by connecting the 3 points (of the center of the circles) to a triangle.  <br>
+    <img src="https://imgtr.ee/images/2023/03/16/qwlxl.png" alt="not found" style="width:300px;height:200px"><br>
+</p>
+
+<h3 align="left"> Results</h3>
+<p align="justify">
+    Out of the 15 types of sockets exist, we classified 12 of them, with a success rate of 84 precent.<br>
+    The types that we did not deal with had the same holes shape as other plugs but had a difference at the surface of the socket. <br>
+    In this project we preferred to focus on the differences between the holes of a socket.<br>
+    Among the types we have dealt with, we checked 3 images per type. 36 images total.<br>
+    30/36 images were not classified correct, because of shading that was too dark, or problem with the cropping step.<br>
+    <img src="https://imgtr.ee/images/2023/03/16/qwSBF.png" alt="not found" style="width:300px;height:350px"><br>
+    </p>
+
+<h3 align="left"> Project's Video</h3>
+<i>Do not touch. Here your project's video clip will be embedded by us...</i>
+<p align="justify">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/LYcXAEZfQFY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe>
+</p>
+
+<h3 align="left"> Conclusions</h3>
+<p align="justify">
+Our goal was to succeed to classify all the 13 types of sockets that have difference between the holes in them. <br>
+However, when facing socket type K, we found it difficult to deal with the bottom hole that has a shape of a semi-circle.<br>
+One of our goals was to deal with images that were taken from different angles. for that reason, some images of holes with circle shape<br>
+that was taken from certain angles, classified by mistake as a semi-circle. <br>
+We realized there is a trade-off between dealing with angles, and classifying semi-circles.<br> 
+so we chose to deal with angles instead of recognizing the k type. As a result, instead of dealing with 13 types of sockets, we dealt with 12 types.<br>
+This computer vision project was very educational and challenging to build.<br>
+as we used classic techniques learned during the course to perform detection and recognition, getting satisfying results even with difficult images.<br>
+Even though the application is good, there are still improvements to be made:<br>
+<ul>
+<li>Deal with socket types K, E and F.</li>   
+<li>Improve the Cropping algorithm.</li> 
+<li>Enable images of multiple sockets.</li>   
+<li>Use of ANN and Deep Learning (not learned during the course).</li> 
+</ul>
+</p>
+
+<h3 align="left"> Additional Information</h3>
+<p align="justify">
+</p>
+<ul>
+    <li> Full project report (<a href="ICBV231-16-Project_report.pdf" class="course">PDF</a>).
+    </li>
+    <li> Oral presentation slides (<a href="ICBV231-Project-20-מצגת.ppt" class="course">ppt</a> , <a href="ICBV231-Project-20-מצגת.pdf" class="course">PDF</a>).
+    </li>
+    <li> Project's video file (<a href="https://drive.google.com/file/d/1r7eHpgCEyj7sHZ03sQeLFShUpREXNRTw/view?usp=sharing" class="course">video_file in drive</a>). 
+    </li>
+    <li> <a href="https://drive.google.com/file/d/14xdjbbEnMlJdRruM6usCnk3b5lr-C6E4/view?usp=sharing" class="course">Downloadable executable</a> (download from drive, unzip the file, and search for "SocketRecognizer.exe")
+    </li>
+    <li> <a href="ICBV231-16-soruce_code.zip" class="course">Downloadable source code</a>.  (unzip to see code)
+    </li>
+    <li> <a href="ICBV231-16-examples.zip" class="course">images for exmaple</a>. 
+
+</ul>
+Make sure that all the downloadable files are included in your zip file!
+<p></p>
+
+<h3 align="left"> References </h3>
+<p align="justify">
+<ul>
+    <li><a href="http://www.learningaboutelectronics.com/Articles/How-to-find-the-largest-or-smallest-object-in-an-image-Python-OpenCV.php">http://www.learningaboutelectronics.com</a>
+    </li>
+    <li><a href="https://docs.opencv.org/3.4/dc/dcf/tutorial_js_contour_features.html">https://docs.opencv.org</a>
+    </li>
+    <li><a href="https://github.com/TomSchimansky/CustomTkinter">https://github.com/TomSchimansky/CustomTkinter</a>
+    </li>
+    <li><a href="https://pyimagesearch.com/2016/02/08/opencv-shape-detection/">https://pyimagesearch.com</a>
+    </li>
+</ul>
+</p>
+
+<!--=======================================================================================================-->
+<!--=                         End of page content                                                       =-->
+<!--=======================================================================================================-->
+<notoc></notoc>
